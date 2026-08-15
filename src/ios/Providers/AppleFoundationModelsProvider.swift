@@ -39,7 +39,11 @@ final class AppleFoundationModelsProvider: LLMProvider, AgentProvider {
             throw AppleFoundationModelsError.unavailable("iOS 26 or later is required")
         }
         try Self.checkAvailability()
-        let session = LanguageModelSession(instructions: normalized(systemPrompt))
+        let session = LanguageModelSession(
+            model: .default,
+            tools: [],
+            instructions: normalized(systemPrompt)
+        )
         let response = try await session.respond(
             to: Self.prompt(from: messages),
             options: Self.options(maxTokens: maxTokens, temperature: temperature)
@@ -62,7 +66,11 @@ final class AppleFoundationModelsProvider: LLMProvider, AgentProvider {
             throw AppleFoundationModelsError.unavailable("iOS 26 or later is required")
         }
         try Self.checkAvailability()
-        let session = LanguageModelSession(instructions: normalized(systemPrompt))
+        let session = LanguageModelSession(
+            model: .default,
+            tools: [],
+            instructions: normalized(systemPrompt)
+        )
         let snapshots = session.streamResponse(
             to: Self.prompt(from: messages),
             options: Self.options(maxTokens: maxTokens, temperature: temperature)

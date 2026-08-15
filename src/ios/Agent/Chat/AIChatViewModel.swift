@@ -1052,7 +1052,7 @@ final class AIChatViewModel: ObservableObject, SpeechControlling {
                 level = thinkLvl.displayName
             case .openAI, .openAIResponses, .openRouter, .xAI, .kimiCode:
                 level = OpenAIAgentProvider.reasoningEffort(for: model, level: thinkLvl) ?? "—"
-            case .unsupported:
+            case .appleFoundationModels, .unsupported:
                 level = "—"
             case .antigravity:
                 let lid = model.id.lowercased()
@@ -5827,4 +5827,3 @@ enum LLMProviderError: LocalizedError {
         }
     }
 }
-

@@ -248,7 +248,7 @@ struct ProviderInstance: Identifiable, Codable, Hashable {
     /// defensive backstop, never the primary mechanism.
     var hasAnyCredential: Bool {
         if providerType == .appleFoundationModels { return true }
-        ProviderCredentialCache.shared.value(for: id) { self.computeHasAnyCredential() }
+        return ProviderCredentialCache.shared.value(for: id) { self.computeHasAnyCredential() }
     }
 
     /// The uncached credential probe. Kept separate so the cache wraps it and

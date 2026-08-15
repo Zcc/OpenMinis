@@ -5,7 +5,7 @@
 
 **Your private, on-device AI agent.**
 
-OpenMinis brings leading models — Claude, GPT, Gemini and more — into a native
+OpenMinis brings leading models — Claude, GPT, Gemini, Apple on-device models and more — into a native
 mobile experience, and gives them a real computer to work with: a full Linux
 shell running on your device, browser automation, extensible skills, persistent
 memory, and deep system integration.
@@ -35,7 +35,7 @@ Official website: **[openminis.app](https://openminis.app)**
 
 | | |
 |---|---|
-| **Bring your own model** | Claude, GPT, Gemini and other providers, via your own API keys or account sign-in. |
+| **Bring your own model** | Claude, GPT, Gemini and other providers, via your own API keys or account sign-in. On supported iOS 26 devices, Apple Foundation Models runs privately on device without credentials. |
 | **A real Linux shell** | A sandboxed Alpine Linux environment runs on-device — the agent can install packages, run scripts, and work with real files. |
 | **Device integration** | Health, Calendar, Reminders, Contacts, HomeKit, Bluetooth, Clipboard, Media, Alarms and more, exposed to the agent as tools. |
 | **Browser automation** | The agent can browse and interact with the web on your behalf. |
