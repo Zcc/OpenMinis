@@ -21,7 +21,7 @@ enum AppleFoundationModelsError: LocalizedError {
 final class AppleFoundationModelsProvider: LLMProvider, AgentProvider {
     let name = "Apple Foundation Models"
     var model: LLMModel
-    var defaultMaxTokens: Int { model.maxOutputTokens ?? 4_096 }
+    var defaultMaxTokens: Int { model.maxOutputTokens ?? 1_024 }
 
     init(model: LLMModel = .appleSystemLanguageModel) {
         self.model = model
@@ -42,10 +42,10 @@ final class AppleFoundationModelsProvider: LLMProvider, AgentProvider {
         let session = LanguageModelSession(
             model: .default,
             tools: [],
-            instructions: normalized(systemPrompt)
+            instructions: compact(systemPrompt, limit: 2_000)
         )
         let response = try await session.respond(
-            to: Self.prompt(from: messages),
+            to: Self.truncatedTail(Self.prompt(from: messages), limit: 8_000),
             options: Self.options(maxTokens: maxTokens, temperature: temperature)
         )
         return LLMResponse(text: response.content, stopReason: "end_turn", usage: nil)
@@ -69,10 +69,10 @@ final class AppleFoundationModelsProvider: LLMProvider, AgentProvider {
         let session = LanguageModelSession(
             model: .default,
             tools: [],
-            instructions: normalized(systemPrompt)
+            instructions: compact(systemPrompt, limit: 2_000)
         )
         let snapshots = session.streamResponse(
-            to: Self.prompt(from: messages),
+            to: Self.truncatedTail(Self.prompt(from: messages), limit: 8_000),
             options: Self.options(maxTokens: maxTokens, temperature: temperature)
         )
         return AsyncThrowingStream { continuation in
@@ -121,10 +121,10 @@ final class AppleFoundationModelsProvider: LLMProvider, AgentProvider {
         let session = LanguageModelSession(
             model: .default,
             tools: adapters,
-            instructions: normalized(systemPrompt)
+            instructions: Self.compactAgentInstructions
         )
         let snapshots = session.streamResponse(
-            to: Self.prompt(from: messages),
+            to: Self.truncatedTail(Self.prompt(from: messages), limit: 6_000),
             options: Self.options(maxTokens: maxTokens, temperature: nil)
         )
         return AsyncThrowingStream { continuation in
@@ -190,9 +190,9 @@ final class AppleFoundationModelsProvider: LLMProvider, AgentProvider {
         }
     }
 
-    private func normalized(_ value: String?) -> String? {
+    private func compact(_ value: String?, limit: Int) -> String? {
         guard let value, !value.isEmpty else { return nil }
-        return value
+        return String(value.prefix(limit))
     }
 
     static func prompt(from messages: [LLMMessage]) -> String {
@@ -224,6 +224,20 @@ final class AppleFoundationModelsProvider: LLMProvider, AgentProvider {
               let string = String(data: data, encoding: .utf8) else { return "{}" }
         return string
     }
+
+    static func truncatedTail(_ value: String, limit: Int) -> String {
+        guard value.count > limit else { return value }
+        return "[Earlier conversation omitted to fit the on-device context window]\n\n"
+            + value.suffix(limit)
+    }
+
+    private static let compactAgentInstructions = """
+        You are Minis, a concise on-device assistant. Complete the user's task using the registered \
+        tools when useful. Invoke tools through function calling, never by printing tool syntax. \
+        Treat tool results as conversation context, report errors honestly, and do not claim an \
+        action succeeded unless its tool result confirms success. Apple Foundation Models is \
+        text-only, so explain when media cannot be processed directly.
+        """
 
 #if canImport(FoundationModels)
     @available(iOS 26.0, *)
@@ -264,7 +278,7 @@ final class AppleFoundationModelsProvider: LLMProvider, AgentProvider {
         GenerationOptions(
             sampling: nil,
             temperature: temperature,
-            maximumResponseTokens: max(1, min(maxTokens, 4_096))
+            maximumResponseTokens: max(1, min(maxTokens, 1_024))
         )
     }
 
@@ -273,24 +287,32 @@ final class AppleFoundationModelsProvider: LLMProvider, AgentProvider {
         let properties = tool.parameters.map { name, parameter in
             DynamicGenerationSchema.Property(
                 name: name,
-                description: parameter.description,
+                description: compactDescription(parameter.description, limit: 80),
                 schema: dynamicSchema(name: "\(tool.name).\(name)", parameter: parameter),
                 isOptional: !tool.required.contains(name)
             )
         }
         let root = DynamicGenerationSchema(
             name: tool.name,
-            description: tool.description,
+            description: compactDescription(tool.description, limit: 120),
             properties: properties
         )
         let schema = try GenerationSchema(root: root, dependencies: [])
-        return DynamicTool(name: tool.name, description: tool.description, parameters: schema)
+        return DynamicTool(
+            name: tool.name,
+            description: compactDescription(tool.description, limit: 120),
+            parameters: schema
+        )
     }
 
     @available(iOS 26.0, *)
     private static func dynamicSchema(name: String, parameter: AgentToolParam) -> DynamicGenerationSchema {
         if let values = parameter.enumValues, !values.isEmpty {
-            return DynamicGenerationSchema(name: name, description: parameter.description, anyOf: values)
+            return DynamicGenerationSchema(
+                name: name,
+                description: compactDescription(parameter.description, limit: 80),
+                anyOf: values
+            )
         }
         switch parameter.type {
         case .string:
@@ -308,6 +330,11 @@ final class AppleFoundationModelsProvider: LLMProvider, AgentProvider {
             return [:]
         }
         return object
+    }
+
+    private static func compactDescription(_ value: String, limit: Int) -> String {
+        let firstSentence = value.split(separator: ".", maxSplits: 1).first.map(String.init) ?? value
+        return String(firstSentence.prefix(limit))
     }
 #endif
 }

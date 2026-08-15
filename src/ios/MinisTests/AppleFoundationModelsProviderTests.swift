@@ -61,4 +61,13 @@ final class AppleFoundationModelsProviderTests: XCTestCase {
         XCTAssertTrue(prompt.contains("[Tool call call-1: lookup"))
         XCTAssertTrue(prompt.contains("[Tool result call-1 from lookup: Found]"))
     }
+
+    func testContextTruncationKeepsNewestContent() {
+        let value = String(repeating: "old", count: 100) + "LATEST"
+        let result = AppleFoundationModelsProvider.truncatedTail(value, limit: 12)
+
+        XCTAssertTrue(result.hasPrefix("[Earlier conversation omitted"))
+        XCTAssertTrue(result.hasSuffix("LATEST"))
+        XCTAssertLessThan(result.count, value.count)
+    }
 }
