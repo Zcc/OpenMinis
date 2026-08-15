@@ -77,7 +77,7 @@ final class AppleFoundationModelsProviderTests: XCTestCase {
 
         XCTAssertTrue(result.contains("IDENTITY-"))
         XCTAssertTrue(result.hasSuffix("-MEMORY"))
-        XCTAssertLessThan(result.count, 1_500)
+        XCTAssertLessThan(result.count, 1_200)
     }
 
 #if canImport(FoundationModels)

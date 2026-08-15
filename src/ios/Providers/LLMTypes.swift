@@ -404,7 +404,7 @@ struct LLMModel: Equatable, Hashable, Identifiable, Sendable, Codable {
         provider: "Apple",
         modalityOverride: .textOnly,
         contextWindow: 4_096,
-        maxOutputTokens: 768,
+        maxOutputTokens: 512,
         supportsReasoning: false
     )
 

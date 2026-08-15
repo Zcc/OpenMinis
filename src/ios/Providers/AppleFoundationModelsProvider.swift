@@ -21,7 +21,7 @@ enum AppleFoundationModelsError: LocalizedError {
 final class AppleFoundationModelsProvider: LLMProvider, AgentProvider {
     let name = "Apple Foundation Models"
     var model: LLMModel
-    var defaultMaxTokens: Int { model.maxOutputTokens ?? 768 }
+    var defaultMaxTokens: Int { model.maxOutputTokens ?? 512 }
 
     init(model: LLMModel = .appleSystemLanguageModel) {
         self.model = model
@@ -42,10 +42,10 @@ final class AppleFoundationModelsProvider: LLMProvider, AgentProvider {
         let session = LanguageModelSession(
             model: .default,
             tools: [],
-            instructions: compact(systemPrompt, limit: 1_500)
+            instructions: compact(systemPrompt, limit: 800)
         )
         let response = try await session.respond(
-            to: Self.truncatedTail(Self.prompt(from: messages), limit: 5_000),
+            to: Self.truncatedTail(Self.prompt(from: messages), limit: 2_200),
             options: Self.options(maxTokens: maxTokens, temperature: temperature)
         )
         return LLMResponse(text: response.content, stopReason: "end_turn", usage: nil)
@@ -69,10 +69,10 @@ final class AppleFoundationModelsProvider: LLMProvider, AgentProvider {
         let session = LanguageModelSession(
             model: .default,
             tools: [],
-            instructions: compact(systemPrompt, limit: 1_500)
+            instructions: compact(systemPrompt, limit: 800)
         )
         let snapshots = session.streamResponse(
-            to: Self.truncatedTail(Self.prompt(from: messages), limit: 5_000),
+            to: Self.truncatedTail(Self.prompt(from: messages), limit: 2_200),
             options: Self.options(maxTokens: maxTokens, temperature: temperature)
         )
         return AsyncThrowingStream { continuation in
@@ -124,7 +124,7 @@ final class AppleFoundationModelsProvider: LLMProvider, AgentProvider {
             instructions: Self.agentInstructions(from: systemPrompt)
         )
         let snapshots = session.streamResponse(
-            to: Self.truncatedTail(Self.prompt(from: messages), limit: 3_500),
+            to: Self.truncatedTail(Self.prompt(from: messages), limit: 1_000),
             options: Self.options(maxTokens: maxTokens, temperature: nil)
         )
         return AsyncThrowingStream { continuation in
@@ -234,12 +234,12 @@ final class AppleFoundationModelsProvider: LLMProvider, AgentProvider {
     static func agentInstructions(from systemPrompt: String?) -> String {
         guard let systemPrompt, !systemPrompt.isEmpty else { return compactAgentInstructions }
         let excerpt: String
-        if systemPrompt.count <= 900 {
+        if systemPrompt.count <= 600 {
             excerpt = systemPrompt
         } else {
-            excerpt = String(systemPrompt.prefix(400))
+            excerpt = String(systemPrompt.prefix(250))
                 + "\n[Long system context omitted for the on-device model]\n"
-                + systemPrompt.suffix(400)
+                + systemPrompt.suffix(250)
         }
         return compactAgentInstructions + "\n\nRelevant Minis instructions:\n" + excerpt
     }
@@ -291,7 +291,7 @@ final class AppleFoundationModelsProvider: LLMProvider, AgentProvider {
         GenerationOptions(
             sampling: nil,
             temperature: temperature,
-            maximumResponseTokens: max(1, min(maxTokens, 768))
+            maximumResponseTokens: max(1, min(maxTokens, 512))
         )
     }
 
