@@ -125,7 +125,7 @@ enum VoiceProviderFactory {
 
         // Antigravity has no OpenAI-compatible voice path; unsupported = synced
         // from a newer build this version can't service.
-        case .antigravity, .kimiCode, .unsupported:
+        case .antigravity, .kimiCode, .appleFoundationModels, .unsupported:
             return nil
         }
     }

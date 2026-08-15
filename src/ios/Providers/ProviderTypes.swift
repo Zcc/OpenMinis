@@ -19,6 +19,9 @@ enum ProviderType: String, Codable, CaseIterable, Hashable, Sendable {
     /// OpenAI-compatible coding upstream — flows through OpenAIProvider with
     /// custom base URL + OAuth bearer, like xAI. See the Kimi Code OAuth design notes.
     case kimiCode
+    /// Apple's on-device language model exposed by the FoundationModels framework.
+    /// Requires iOS 26 and an Apple Intelligence-capable device.
+    case appleFoundationModels
     /// Sentinel for a provider type this app build doesn't recognize — e.g. a
     /// NEWER build synced an instance whose `provider_type` string isn't a known
     /// case here. We DECODE to this instead of throwing/dropping, so the instance
@@ -43,6 +46,7 @@ enum ProviderType: String, Codable, CaseIterable, Hashable, Sendable {
         case .openAIResponses: return "Responses API (v3)"
         case .xAI: return "xAI (Grok)"
         case .kimiCode: return "Kimi Code"
+        case .appleFoundationModels: return "Apple Foundation Models"
         case .unsupported: return "Unsupported"
         }
     }
@@ -58,6 +62,7 @@ enum ProviderType: String, Codable, CaseIterable, Hashable, Sendable {
         case .openAIResponses: return LLMModel.allOpenAI
         case .xAI: return XAIModelsAPI.allModels
         case .kimiCode: return KimiModelsAPI.allModels
+        case .appleFoundationModels: return [.appleSystemLanguageModel]
         case .unsupported: return []
         }
     }
@@ -82,6 +87,8 @@ enum ProviderType: String, Codable, CaseIterable, Hashable, Sendable {
             return String(localized: "Sign in with your Kimi Code / Coding Plan subscription")
         case .antigravity:
             return String(localized: "\(builtInModels.count) built-in models")
+        case .appleFoundationModels:
+            return String(localized: "Runs privately on device with Apple Intelligence")
         case .unsupported:
             return String(localized: "\(builtInModels.count) built-in models")
         }
@@ -98,6 +105,7 @@ enum ProviderType: String, Codable, CaseIterable, Hashable, Sendable {
         case .openAIResponses: return .vision
         case .xAI: return .vision
         case .kimiCode: return .vision
+        case .appleFoundationModels: return .textOnly
         case .unsupported: return .vision
         }
     }

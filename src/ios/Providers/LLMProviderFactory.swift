@@ -34,6 +34,8 @@ enum LLMProviderFactory {
             return makeXAIProvider(instance: instance, model: entry.model)
         case .kimiCode:
             return makeKimiProvider(instance: instance, model: entry.model)
+        case .appleFoundationModels:
+            return AppleFoundationModelsProvider(model: entry.model)
         case .unsupported:
             throw FactoryError.voiceOnlyProvider
         }

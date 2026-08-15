@@ -40,6 +40,8 @@ extension AIChatViewModel {
             return OpenAIAgentProvider(provider: LLMProviderFactory.makeXAIProvider(instance: instance, model: entry.model))
         case .kimiCode:
             return OpenAIAgentProvider(provider: LLMProviderFactory.makeKimiProvider(instance: instance, model: entry.model))
+        case .appleFoundationModels:
+            return AppleFoundationModelsProvider(model: entry.model)
         case .unsupported:
             logger.error("\(instance.providerType) has no agent provider; returning placeholder")
             return AnthropicAgentProvider(provider: AnthropicProvider(apiKey: "", model: entry.model))
@@ -70,6 +72,8 @@ extension AIChatViewModel {
         // OAuth-login paths keep their required client UA (nil here). Mirrors LLMProviderFactory.
         let ua = instance.supportsCustomUserAgent ? instance.effectiveCustomUserAgent : nil
         switch instance.providerType {
+        case .appleFoundationModels:
+            return AppleFoundationModelsProvider(model: entry.model)
         case .anthropic:
             switch instance.credentialType {
             case .apiKey:

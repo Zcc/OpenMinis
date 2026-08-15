@@ -141,19 +141,25 @@ struct ProviderInstanceDetailView: View {
                     .onChange(of: editingLabel) { _ in saveLabel(instance) }
             }
 
-            // MARK: Credential
-            Section {
-                credentialSection(instance)
-            } header: {
-                Text("Credential")
-            } footer: {
-                Text(instance.credentialType == .apiKey
-                     ? "API key is stored securely in the iOS Keychain."
-                     : "OAuth tokens are stored per-instance in the iOS Keychain.")
-            }
+            if instance.providerType == .appleFoundationModels {
+                Section("Availability") {
+                    Label("Uses Apple Intelligence on this device", systemImage: "lock.shield")
+                }
+            } else {
+                // MARK: Credential
+                Section {
+                    credentialSection(instance)
+                } header: {
+                    Text("Credential")
+                } footer: {
+                    Text(instance.credentialType == .apiKey
+                         ? "API key is stored securely in the iOS Keychain."
+                         : "OAuth tokens are stored per-instance in the iOS Keychain.")
+                }
 
-            // MARK: Custom Base URL
-            customBaseURLSection(instance)
+                // MARK: Custom Base URL
+                customBaseURLSection(instance)
+            }
 
             // [T-mimo-shadow-voice] These LLM-config fields are gated by their own
             // providerType/capability checks (supportsCustomUserAgent, API-format
@@ -493,6 +499,7 @@ struct ProviderInstanceDetailView: View {
         case .openAIResponses: return "https://api.openai.com/v1"
         case .xAI: return "https://api.x.ai/v1"
         case .kimiCode: return "https://api.kimi.com/coding"
+        case .appleFoundationModels: return "On device"
         case .unsupported: return "—"
         }
     }
@@ -860,6 +867,7 @@ struct ProviderInstanceDetailView: View {
         case .openAIResponses: return false // API key only
         case .xAI: return XAIOAuthManager.shared.isAuthenticated(instanceId: instance.id)
         case .kimiCode: return KimiOAuthManager.shared.isAuthenticated(instanceId: instance.id)
+        case .appleFoundationModels: return true
         case .unsupported: return false // synced from newer build
         }
     }
@@ -921,6 +929,8 @@ struct ProviderInstanceDetailView: View {
         case .kimiCode:
             return KimiOAuthManager.shared.isAuthenticated(instanceId: instance.id)
                 ? String(localized: "Authenticated") : String(localized: "Not authenticated")
+        case .appleFoundationModels:
+            return String(localized: "No authentication required")
         case .unsupported:
             return String(localized: "Unsupported in this app version")
         }
@@ -936,6 +946,7 @@ struct ProviderInstanceDetailView: View {
         case .openAIResponses: return String(localized: "Sign In")
         case .xAI: return String(localized: "Sign in with xAI")
         case .kimiCode: return String(localized: "Sign in with Kimi Code")
+        case .appleFoundationModels: return String(localized: "On Device")
         case .unsupported: return String(localized: "Sign In")
         }
     }
@@ -951,6 +962,7 @@ struct ProviderInstanceDetailView: View {
             case .openAIResponses: break
             case .xAI: try await XAIOAuthManager.shared.login(instanceId: instance.id)
             case .kimiCode: break // device-code flow runs in KimiDeviceLoginSheet
+            case .appleFoundationModels: break
             case .unsupported: break
             }
         } catch {
@@ -970,6 +982,7 @@ struct ProviderInstanceDetailView: View {
         case .openAIResponses: break // API key only
         case .xAI: XAIOAuthManager.shared.logout(instanceId: instance.id)
         case .kimiCode: KimiOAuthManager.shared.logout(instanceId: instance.id)
+        case .appleFoundationModels: break
         case .unsupported: break
         }
     }
@@ -993,6 +1006,8 @@ struct ProviderInstanceDetailView: View {
             token = try? await XAIOAuthManager.shared.validAccessToken(instanceId: instance.id)
         case .kimiCode:
             token = try? await KimiOAuthManager.shared.validAccessToken(instanceId: instance.id)
+        case .appleFoundationModels:
+            token = nil
         case .unsupported:
             token = nil
         }
@@ -1012,6 +1027,7 @@ struct ProviderInstanceDetailView: View {
         case .antigravity: return "API Key..."
         case .openRouter: return "sk-or-..."
         case .openAIResponses: return "sk-..."
+        case .appleFoundationModels: return ""
         case .unsupported: return ""
         }
     }
@@ -1630,4 +1646,3 @@ private struct ProviderShareSheet: UIViewControllerRepresentable {
     }
     func updateUIViewController(_ vc: UIActivityViewController, context: Context) {}
 }
-

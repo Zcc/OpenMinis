@@ -88,6 +88,8 @@ enum ProviderMigration {
             case .kimiCode:
                 // Kimi is a new provider; no legacy singleton tokens to migrate.
                 break
+            case .appleFoundationModels:
+                break
             case .unsupported:
                 break
             }

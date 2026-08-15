@@ -644,7 +644,12 @@ final class ProviderConfigStore: ObservableObject {
 
     func addInstance(_ instance: ProviderInstance) {
         config.instances.append(instance)
-        if instance.credentialType == .oauth {
+        if instance.providerType == .appleFoundationModels {
+            let entries = instance.providerType.builtInModels.map {
+                ModelEntry(providerInstanceId: instance.id, model: $0)
+            }
+            config.modelEntries.append(contentsOf: entries)
+        } else if instance.credentialType == .oauth {
             // OAuth instances: pre-populate with static built-in list, enriched with models.dev data.
             let builtIn: [LLMModel]
             let hasManualToken = ProviderKeychainHelper.loadOAuthString(instanceId: instance.id, account: "manual-oauth-token") != nil
@@ -2448,6 +2453,8 @@ final class ProviderConfigStore: ObservableObject {
             let kimiBase = customBase ?? "https://api.kimi.com/coding"
             let kimiAppendV1 = customBase == nil ? true : appendV1  // default base …/coding needs /v1 appended
             return try await OpenAIModelsAPI.fetchModels(apiKey: token, baseURL: kimiBase, appendV1Suffix: kimiAppendV1, forceRefresh: forceRefresh, userAgent: nil)
+        case (.appleFoundationModels, _):
+            return ProviderType.appleFoundationModels.builtInModels
         case (.unsupported, _):
             // Synced from a newer build — can't fetch; keep whatever's stored.
             return []
@@ -2630,7 +2637,7 @@ final class ProviderConfigStore: ObservableObject {
         case .gemini: return "https://generativelanguage.googleapis.com"
         case .openRouter: return "https://openrouter.ai/api"
         case .antigravity: return nil // No public base URL
-        case .unsupported: return nil // synced from newer build
+        case .appleFoundationModels, .unsupported: return nil
         }
     }
 }
