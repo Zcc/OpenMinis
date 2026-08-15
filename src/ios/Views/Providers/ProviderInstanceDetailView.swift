@@ -141,19 +141,25 @@ struct ProviderInstanceDetailView: View {
                     .onChange(of: editingLabel) { _ in saveLabel(instance) }
             }
 
-            // MARK: Credential
-            Section {
-                credentialSection(instance)
-            } header: {
-                Text("Credential")
-            } footer: {
-                Text(instance.credentialType == .apiKey
-                     ? "API key is stored securely in the iOS Keychain."
-                     : "OAuth tokens are stored per-instance in the iOS Keychain.")
-            }
+            if instance.providerType == .appleFoundationModels {
+                Section("Availability") {
+                    Label("Uses Apple Intelligence on this device", systemImage: "lock.shield")
+                }
+            } else {
+                // MARK: Credential
+                Section {
+                    credentialSection(instance)
+                } header: {
+                    Text("Credential")
+                } footer: {
+                    Text(instance.credentialType == .apiKey
+                         ? "API key is stored securely in the iOS Keychain."
+                         : "OAuth tokens are stored per-instance in the iOS Keychain.")
+                }
 
-            // MARK: Custom Base URL
-            customBaseURLSection(instance)
+                // MARK: Custom Base URL
+                customBaseURLSection(instance)
+            }
 
             // [T-mimo-shadow-voice] These LLM-config fields are gated by their own
             // providerType/capability checks (supportsCustomUserAgent, API-format
@@ -1630,4 +1636,3 @@ private struct ProviderShareSheet: UIViewControllerRepresentable {
     }
     func updateUIViewController(_ vc: UIActivityViewController, context: Context) {}
 }
-

@@ -396,7 +396,19 @@ struct LLMModel: Equatable, Hashable, Identifiable, Sendable, Codable {
         .orClaudeSonnet4, .orGemini25Flash, .orGPT4o, .orLlama4Maverick,
     ]
 
-    static let allModels: [LLMModel] = allAnthropic + allGemini + allOpenAI + allAntigravity + allOpenRouter
+    // MARK: - Apple Foundation Models
+
+    static let appleSystemLanguageModel = LLMModel(
+        id: "apple-system-language-model",
+        displayName: "Apple On-Device Model",
+        provider: "Apple",
+        modalityOverride: .textOnly,
+        contextWindow: 4_096,
+        maxOutputTokens: 4_096,
+        supportsReasoning: false
+    )
+
+    static let allModels: [LLMModel] = allAnthropic + allGemini + allOpenAI + allAntigravity + allOpenRouter + [.appleSystemLanguageModel]
 
     // MARK: - Modality Inference from Model Name
 
@@ -516,6 +528,10 @@ struct LLMModel: Equatable, Hashable, Identifiable, Sendable, Codable {
         "OpenAI": ModelCapabilities(
             supportedModalities: .vision,
             supportedAuth: [.apiKey, .oauth]
+        ),
+        "Apple": ModelCapabilities(
+            supportedModalities: .textOnly,
+            supportedAuth: []
         ),
         "Antigravity": ModelCapabilities(
             supportedModalities: .fullMultimodal,

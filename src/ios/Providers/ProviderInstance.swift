@@ -146,7 +146,7 @@ struct ProviderInstance: Identifiable, Codable, Hashable {
         switch providerType {
         case .openAI, .openAIResponses, .openRouter, .xAI, .kimiCode, .anthropic:
             return true
-        case .gemini, .antigravity, .unsupported:
+        case .gemini, .antigravity, .appleFoundationModels, .unsupported:
             return false
         }
     }
@@ -247,6 +247,7 @@ struct ProviderInstance: Identifiable, Codable, Hashable {
     /// notifications, and wholesale on foreground; a 15s TTL is only a
     /// defensive backstop, never the primary mechanism.
     var hasAnyCredential: Bool {
+        if providerType == .appleFoundationModels { return true }
         ProviderCredentialCache.shared.value(for: id) { self.computeHasAnyCredential() }
     }
 
@@ -288,7 +289,7 @@ struct ProviderInstance: Identifiable, Codable, Hashable {
             return ProviderKeychainHelper.loadOAuthToken(
                 instanceId: id, as: KimiTokenStorage.self, caller: "hasAnyCredential"
             ) != nil
-        case .antigravity, .openRouter, .unsupported:
+        case .antigravity, .openRouter, .appleFoundationModels, .unsupported:
             // unsupported = synced from a newer build; no usable credential here.
             // antigravity stores its token via AntigravityOAuthManager (no
             // standalone Codable used by the diagnostic); OpenRouter is

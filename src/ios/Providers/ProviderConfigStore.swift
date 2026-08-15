@@ -644,7 +644,12 @@ final class ProviderConfigStore: ObservableObject {
 
     func addInstance(_ instance: ProviderInstance) {
         config.instances.append(instance)
-        if instance.credentialType == .oauth {
+        if instance.providerType == .appleFoundationModels {
+            let entries = instance.providerType.builtInModels.map {
+                ModelEntry(providerInstanceId: instance.id, model: $0)
+            }
+            config.modelEntries.append(contentsOf: entries)
+        } else if instance.credentialType == .oauth {
             // OAuth instances: pre-populate with static built-in list, enriched with models.dev data.
             let builtIn: [LLMModel]
             let hasManualToken = ProviderKeychainHelper.loadOAuthString(instanceId: instance.id, account: "manual-oauth-token") != nil
