@@ -21,7 +21,7 @@ enum AppleFoundationModelsError: LocalizedError {
 final class AppleFoundationModelsProvider: LLMProvider, AgentProvider {
     let name = "Apple Foundation Models"
     var model: LLMModel
-    var defaultMaxTokens: Int { model.maxOutputTokens ?? 1_024 }
+    var defaultMaxTokens: Int { model.maxOutputTokens ?? 768 }
 
     init(model: LLMModel = .appleSystemLanguageModel) {
         self.model = model
@@ -42,10 +42,10 @@ final class AppleFoundationModelsProvider: LLMProvider, AgentProvider {
         let session = LanguageModelSession(
             model: .default,
             tools: [],
-            instructions: compact(systemPrompt, limit: 2_000)
+            instructions: compact(systemPrompt, limit: 1_500)
         )
         let response = try await session.respond(
-            to: Self.truncatedTail(Self.prompt(from: messages), limit: 8_000),
+            to: Self.truncatedTail(Self.prompt(from: messages), limit: 5_000),
             options: Self.options(maxTokens: maxTokens, temperature: temperature)
         )
         return LLMResponse(text: response.content, stopReason: "end_turn", usage: nil)
@@ -69,10 +69,10 @@ final class AppleFoundationModelsProvider: LLMProvider, AgentProvider {
         let session = LanguageModelSession(
             model: .default,
             tools: [],
-            instructions: compact(systemPrompt, limit: 2_000)
+            instructions: compact(systemPrompt, limit: 1_500)
         )
         let snapshots = session.streamResponse(
-            to: Self.truncatedTail(Self.prompt(from: messages), limit: 8_000),
+            to: Self.truncatedTail(Self.prompt(from: messages), limit: 5_000),
             options: Self.options(maxTokens: maxTokens, temperature: temperature)
         )
         return AsyncThrowingStream { continuation in
@@ -121,10 +121,10 @@ final class AppleFoundationModelsProvider: LLMProvider, AgentProvider {
         let session = LanguageModelSession(
             model: .default,
             tools: adapters,
-            instructions: Self.compactAgentInstructions
+            instructions: Self.agentInstructions(from: systemPrompt)
         )
         let snapshots = session.streamResponse(
-            to: Self.truncatedTail(Self.prompt(from: messages), limit: 6_000),
+            to: Self.truncatedTail(Self.prompt(from: messages), limit: 3_500),
             options: Self.options(maxTokens: maxTokens, temperature: nil)
         )
         return AsyncThrowingStream { continuation in
@@ -231,6 +231,19 @@ final class AppleFoundationModelsProvider: LLMProvider, AgentProvider {
             + value.suffix(limit)
     }
 
+    static func agentInstructions(from systemPrompt: String?) -> String {
+        guard let systemPrompt, !systemPrompt.isEmpty else { return compactAgentInstructions }
+        let excerpt: String
+        if systemPrompt.count <= 900 {
+            excerpt = systemPrompt
+        } else {
+            excerpt = String(systemPrompt.prefix(400))
+                + "\n[Long system context omitted for the on-device model]\n"
+                + systemPrompt.suffix(400)
+        }
+        return compactAgentInstructions + "\n\nRelevant Minis instructions:\n" + excerpt
+    }
+
     private static let compactAgentInstructions = """
         You are Minis, a concise on-device assistant. Complete the user's task using the registered \
         tools when useful. Invoke tools through function calling, never by printing tool syntax. \
@@ -278,7 +291,7 @@ final class AppleFoundationModelsProvider: LLMProvider, AgentProvider {
         GenerationOptions(
             sampling: nil,
             temperature: temperature,
-            maximumResponseTokens: max(1, min(maxTokens, 1_024))
+            maximumResponseTokens: max(1, min(maxTokens, 768))
         )
     }
 
@@ -287,20 +300,20 @@ final class AppleFoundationModelsProvider: LLMProvider, AgentProvider {
         let properties = tool.parameters.map { name, parameter in
             DynamicGenerationSchema.Property(
                 name: name,
-                description: compactDescription(parameter.description, limit: 80),
+                description: compactDescription(parameter.description, limit: 40),
                 schema: dynamicSchema(name: "\(tool.name).\(name)", parameter: parameter),
                 isOptional: !tool.required.contains(name)
             )
         }
         let root = DynamicGenerationSchema(
             name: tool.name,
-            description: compactDescription(tool.description, limit: 120),
+            description: compactDescription(tool.description, limit: 60),
             properties: properties
         )
         let schema = try GenerationSchema(root: root, dependencies: [])
         return DynamicTool(
             name: tool.name,
-            description: compactDescription(tool.description, limit: 120),
+            description: compactDescription(tool.description, limit: 60),
             parameters: schema
         )
     }
@@ -310,7 +323,7 @@ final class AppleFoundationModelsProvider: LLMProvider, AgentProvider {
         if let values = parameter.enumValues, !values.isEmpty {
             return DynamicGenerationSchema(
                 name: name,
-                description: compactDescription(parameter.description, limit: 80),
+                description: compactDescription(parameter.description, limit: 40),
                 anyOf: values
             )
         }

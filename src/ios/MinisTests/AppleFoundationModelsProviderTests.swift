@@ -70,4 +70,13 @@ final class AppleFoundationModelsProviderTests: XCTestCase {
         XCTAssertTrue(result.hasSuffix("LATEST"))
         XCTAssertLessThan(result.count, value.count)
     }
+
+    func testAgentInstructionsKeepSystemPromptEdgesWithinBudget() {
+        let systemPrompt = "IDENTITY-" + String(repeating: "x", count: 2_000) + "-MEMORY"
+        let result = AppleFoundationModelsProvider.agentInstructions(from: systemPrompt)
+
+        XCTAssertTrue(result.contains("IDENTITY-"))
+        XCTAssertTrue(result.hasSuffix("-MEMORY"))
+        XCTAssertLessThan(result.count, 1_500)
+    }
 }
