@@ -79,4 +79,14 @@ final class AppleFoundationModelsProviderTests: XCTestCase {
         XCTAssertTrue(result.hasSuffix("-MEMORY"))
         XCTAssertLessThan(result.count, 1_500)
     }
+
+#if canImport(FoundationModels)
+    func testSchemaIdentifiersAreGrammarSafe() {
+        XCTAssertEqual(
+            AppleFoundationModelsProvider.schemaIdentifier("browser_use.action-name"),
+            "browser_use_action_name"
+        )
+        XCTAssertEqual(AppleFoundationModelsProvider.schemaIdentifier("123"), "_123")
+    }
+#endif
 }

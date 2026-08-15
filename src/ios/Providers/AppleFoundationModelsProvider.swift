@@ -301,12 +301,15 @@ final class AppleFoundationModelsProvider: LLMProvider, AgentProvider {
             DynamicGenerationSchema.Property(
                 name: name,
                 description: compactDescription(parameter.description, limit: 40),
-                schema: dynamicSchema(name: "\(tool.name).\(name)", parameter: parameter),
+                schema: dynamicSchema(
+                    name: schemaIdentifier("\(tool.name)_\(name)"),
+                    parameter: parameter
+                ),
                 isOptional: !tool.required.contains(name)
             )
         }
         let root = DynamicGenerationSchema(
-            name: tool.name,
+            name: schemaIdentifier(tool.name),
             description: compactDescription(tool.description, limit: 60),
             properties: properties
         )
@@ -348,6 +351,18 @@ final class AppleFoundationModelsProvider: LLMProvider, AgentProvider {
     private static func compactDescription(_ value: String, limit: Int) -> String {
         let firstSentence = value.split(separator: ".", maxSplits: 1).first.map(String.init) ?? value
         return String(firstSentence.prefix(limit))
+    }
+
+    static func schemaIdentifier(_ value: String) -> String {
+        let allowed = CharacterSet.alphanumerics.union(CharacterSet(charactersIn: "_"))
+        let sanitized = String(value.unicodeScalars.map {
+            allowed.contains($0) ? Character($0) : "_"
+        })
+        guard let first = sanitized.unicodeScalars.first,
+              CharacterSet.letters.union(CharacterSet(charactersIn: "_")).contains(first) else {
+            return "_\(sanitized)"
+        }
+        return sanitized
     }
 #endif
 }
